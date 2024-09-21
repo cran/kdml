@@ -1,24 +1,25 @@
-\name{dkss}
-\alias{dkss}
+\name{kss}
+\alias{kss}
 \title{
-Distance using Kernel Summation Similarity (DKSS) for Mixed-type Data
+Kernel Summation Similarity Function (KSS) for Mixed-type Data
 }
 \description{
-This function calculates the pairwise distances between mixed-type observations 
-consisting of continuous (\code{numeric}), nominal (\code{factor}), and ordinal 
-(\code{ordered}) variables using the method described in Ghashti (2024). 
-This kernel metric learning methodology calculates a kernel sum similarity 
-function, with a variety of options for kernel functions associated with each 
-variable type and returns a distance matrix that can be used in any distance-
-based algorithm.
+This function calculates the pairwise similarities between mixed-type 
+observations  consisting of continuous (\code{numeric}), nominal 
+(\code{factor}), and ordinal (\code{ordered}) variables using the method 
+described in Ghashti (2024). This kernel similarity learning methodology 
+calculates a kernel sum similarity function, with a variety of options for 
+kernel functions associated with each variable type and returns a distance 
+matrix that can be used in any distance-based algorithm.
 }
 \usage{
-dkss(df, bw = "mscv", cFUN = "c_gaussian", uFUN = "u_aitken", 
-    oFUN = "o_wangvanryzin", stan = TRUE, verbose = FALSE)
+kss(df, bw = "np", npmethod = NULL, cFUN = "c_gaussian", 
+    uFUN = "u_aitken", oFUN = "o_wangvanryzin", nstart = NULL, 
+    stan = TRUE, verbose = FALSE)
 }
 \arguments{
   \item{df}{
-    a \eqn{p}-variate data frame for which the pairwise distances between 
+    a \eqn{p}-variate data frame for which the pairwise similarities between 
     observations will be calculated. The data types may be continuous 
     (\code{numeric}), nominal (\code{factor}), and ordinal (\code{ordered}), 
     or any combination thereof. Columns of \code{df} should be of appropriate 
@@ -27,12 +28,21 @@ dkss(df, bw = "mscv", cFUN = "c_gaussian", uFUN = "u_aitken",
   \item{bw}{
    numeric bandwidth vector of length \eqn{p}, with each element \eqn{i} 
    corresponding to the bandwidth for column \eqn{i} in \code{df}. 
-   Alternatively, one of two character strings may be inputted for bandwidth 
-   selection methods. \code{mscv} specifies maximum-similarity cross-validation,
-   and \code{np} specifies likelihood-cross validation which is calculated using 
-   \code{\link[np]{npudensbw}} in package \code{\link[np]{np}}. Defaults to 
-   \code{mscv}. See details.
+   Alternatively, a character strings may be inputted for bandwidth 
+   selection methods. \code{np} specifies this techniques which calculate 
+   bandwidths using \code{\link[np]{npudensbw}} in package \code{\link[np]{np}}. 
+   Defaults to \code{np} with \code{npmethod} set to \code{cv.ml} for maximum 
+   likelihood cross-validation. See details.
 }
+
+  \item{npmethod}{
+   character value specifying the \code{np} bandwidth selection to be used for 
+   calculating bandwidths. Options include \code{cv.ml} for maximum likelihood 
+   cross-validation, \code{cv.ls} for least squares cross-validation, and 
+   \code{normal-reference} for normal reference. If left as \code{NULL}, defaults 
+   to \code{cv.ml}.
+}
+
   \item{cFUN}{
    character value specifying the continuous kernel function. Options include 
    \code{c_gaussian}, \code{c_epanechnikov}, \code{c_uniform}, 
@@ -55,7 +65,11 @@ dkss(df, bw = "mscv", cFUN = "c_gaussian", uFUN = "u_aitken",
    \code{o_wangvanryzin} or \code{o_liracine}. Defaults to \code{o_wangvanryzin}. 
    See details.
 }
- \item{stan}{
+  \item{nstart}{
+    integer value specifying the number of random starts for the \code{kmeans} 
+    algorithm. Defaults to \code{10}.
+}
+\item{stan}{
    a logical value which specifies whether to scale the resulting distance 
    matrix between 0 and 1 using min-max normalization. If set to \code{FALSE}, 
    distances are unscaled. Defaults to \code{TRUE}.
@@ -67,10 +81,10 @@ dkss(df, bw = "mscv", cFUN = "c_gaussian", uFUN = "u_aitken",
 }
 }
 \details{
-  \code{dkss} implements the distance using summation similarity distance (DKSS)
+  \code{kss} implements the kernel summation similarity function (KSS)
   as described by Ghashti (2024). This approach uses summation kernels for 
   continuous, nominal and ordinal data, which are then summed over all variable 
-  types to return the pairwise distance between mixed-type data. 
+  types to return the pairwise similarities between mixed-type data. 
   
   There are several kernels to select from. The continuous kernel functions may 
   be found in Cameron and Trivedi (2005), Härdle et al. (2004) or Silverman 
@@ -82,12 +96,11 @@ dkss(df, bw = "mscv", cFUN = "c_gaussian", uFUN = "u_aitken",
   
   Each kernel requires a bandwidth specification, which can either be a user 
   defined numeric vector of length \eqn{p} from alternative methodologies for 
-  bandwidth selection, or through two bandwidth selection methods can be 
-  specified. The \code{mscv} bandwidth selection is based on maximum similarity 
-  cross-validation by Ghashti and Thompson (2024), invoked by the function 
-  \code{\link{mscv.dkss}}. The \code{np} bandwidth selection follows the maximum
-  likelihood cross-validation method described by Li and Racine (2007) and Li 
-  and Racine (2003) for kernel density estimation of mixed-type data. 
+  bandwidth selection, or through one bandwidth selection method can be 
+  specified. The \code{np} bandwidth selection methods follow three techniques 
+  (\code{cv.ml}, \code{cv.ls} and \code{normal-reference}) described by Li and 
+  Racine (2007) and Li and Racine (2003) for kernel density estimation of 
+  mixed-type data. 
 
   Data contained in the data frame \code{df} may constitute any combinations of 
   continuous, nominal, or ordinal data, which is to be specified in the data 
@@ -99,10 +112,10 @@ dkss(df, bw = "mscv", cFUN = "c_gaussian", uFUN = "u_aitken",
 }
 
 \value{
-  \code{dkss} returns a \code{list} object, with the
+  \code{kss} returns a \code{list} object, with the
   following components:
- \item{distances}{
- an \eqn{n \times n} numeric matrix containing pairwise distances between 
+ \item{similarities}{
+ an \eqn{n \times n} numeric matrix containing pairwise similarities between 
  observations
  }
  \item{bandwidths}{
@@ -129,23 +142,22 @@ dkss(df, bw = "mscv", cFUN = "c_gaussian", uFUN = "u_aitken",
   and Practice}, Princeton University Press.
 
   Li, Q. and J.S. Racine (2003), \dQuote{Nonparametric estimation of
-   distributions with categorical and continuous data}, Journal
+  distributions with categorical and continuous data}, Journal
   of Multivariate Analysis, 86, 266-292.
 
   Ouyang, D. and Q. Li and J.S. Racine (2006), \dQuote{Cross-validation
-    and the estimation of probability distributions with categorical
-    data}, Journal of Nonparametric Statistics, 18, 69-100.
+  and the estimation of probability distributions with categorical
+  data}, Journal of Nonparametric Statistics, 18, 69-100.
 
   Silverman, B.W. (1986), \dQuote{Density Estimation}, London: Chapman and
   Hall.
   
   Titterington, D.M. and A.W. Bowman (1985), \dQuote{A comparative study of 
   smoothing procedures for ordered categorical data}, Journal of Statistical 
-  
   Computation and Simulation, 21(3-4), 291-312.
 
   Wang, M.C. and J. van Ryzin (1981), \dQuote{A class of smooth estimators
-   for discrete distributions},  Biometrika, 68, 301-309.
+  for discrete distributions},  Biometrika, 68, 301-309.
 
 }
 \author{
@@ -155,7 +167,7 @@ dkss(df, bw = "mscv", cFUN = "c_gaussian", uFUN = "u_aitken",
 
 
 \seealso{
- \code{\link{mscv.dkps}}, \code{\link{dkps}}, \code{\link{mscv.dkss}}
+ \code{\link{mscv.dkps}}, \code{\link{dkps}}, \code{\link{mscv.dkss}}, \code{\link{dkss}}, \code{link{spectral.clust}}
 }
 \examples{
 \donttest{
@@ -172,14 +184,14 @@ df <- data.frame(
 # minimal implementation requires just the data frame, and will automatically be
 # defaulted to the mscv bandwidth specification technique and default kernel 
 # function
-d1 <- dkss(df = df)
-# d$bandwidths to see the mscv obtained bandwidths
-# d$distances to see the distance matrix
+s1 <- kss(df = df)
+# s$bandwidths to see the mscv obtained bandwidths
+# s$similarities to see the similarity matrix
 
 
 # try using the np package, which has few continuous and ordinal kernels 
 # to choose from. Recommended using default kernel functions
-d2 <- dkss(df = df, bw = "np")
+s2 <- kss(df = df, bw = "np") #defaults to npmethod "cv.ml"
 
 
 # precomputed bandwidth example
@@ -190,12 +202,12 @@ d2 <- dkss(df = df, bw = "np")
 # where c is the number of unique values in the i-th column of df.
 # any bandwidths outside this range will result in a warning message
 bw_vec <- c(1.0, 0.5, 0.5, 5.0, 0.3, 0.3) 
-d3 <- dkss(df = df, bw = bw_vec)
+s3 <- kss(df = df, bw = bw_vec)
 
 
-# user-specific kernel functions example
-d5 <- dkss(df = df, bw = "mscv", cFUN = "c_epanechnikov", uFUN = "u_aitken", 
-      oFUN = "o_habbema")
+# user-specific kernel functions example with "cv.ls" from np.
+s4 <- kss(df = df, bw = "np", npmethod = "cv.ls", cFUN = "c_epanechnikov", 
+    uFUN = "u_aitken", oFUN = "o_wangvanryzin")
 }
 }
 
